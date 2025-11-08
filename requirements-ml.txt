@@ -1,0 +1,4 @@
+# Optional ML validation dependencies
+torch>=2.0.0
+ultralytics>=8.0.0
+

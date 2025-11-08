@@ -1,0 +1,4 @@
+# Optional GUI dependencies
+PyQt5>=5.15.0
+matplotlib>=3.5.0
+
