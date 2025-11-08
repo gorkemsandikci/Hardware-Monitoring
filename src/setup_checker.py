@@ -30,7 +30,9 @@ console = Console()
 class CheckResult:
     """Container for check result."""
 
-    def __init__(self, name: str, status: str, message: str, recommendation: Optional[str] = None):
+    def __init__(
+        self, name: str, status: str, message: str, recommendation: Optional[str] = None
+    ):
         """
         Initialize check result.
 
@@ -146,7 +148,9 @@ def check_cuda_toolkit() -> CheckResult:
 
         # Parse version from output
         output = result.stdout
-        version_line = [line for line in output.split("\n") if "release" in line.lower()]
+        version_line = [
+            line for line in output.split("\n") if "release" in line.lower()
+        ]
         if version_line:
             version_info = version_line[0]
             return CheckResult(
@@ -193,6 +197,7 @@ def check_pytorch() -> Tuple[CheckResult, Optional[CheckResult]]:
     # Check if PyTorch is installed
     try:
         import torch
+
         pytorch_version = torch.__version__
         pytorch_check = CheckResult(
             name="PyTorch",
@@ -215,7 +220,9 @@ def check_pytorch() -> Tuple[CheckResult, Optional[CheckResult]]:
         cuda_available = torch.cuda.is_available()
         if cuda_available:
             device_count = torch.cuda.device_count()
-            device_name = torch.cuda.get_device_name(0) if device_count > 0 else "Unknown"
+            device_name = (
+                torch.cuda.get_device_name(0) if device_count > 0 else "Unknown"
+            )
             cuda_version = torch.version.cuda
 
             message = f"CUDA available: Yes | Devices: {device_count} | Device 0: {device_name}"
@@ -350,8 +357,12 @@ def check_version_compatibility() -> List[CheckResult]:
     # Compare versions
     if driver_cuda and toolkit_cuda:
         try:
-            driver_major = float(driver_cuda.split(".")[0] + "." + driver_cuda.split(".")[1])
-            toolkit_major = float(toolkit_cuda.split(".")[0] + "." + toolkit_cuda.split(".")[1])
+            driver_major = float(
+                driver_cuda.split(".")[0] + "." + driver_cuda.split(".")[1]
+            )
+            toolkit_major = float(
+                toolkit_cuda.split(".")[0] + "." + toolkit_cuda.split(".")[1]
+            )
 
             if abs(driver_major - toolkit_major) > 0.1:
                 results.append(
@@ -375,8 +386,12 @@ def check_version_compatibility() -> List[CheckResult]:
 
     if pytorch_cuda and toolkit_cuda:
         try:
-            pytorch_major = float(pytorch_cuda.split(".")[0] + "." + pytorch_cuda.split(".")[1])
-            toolkit_major = float(toolkit_cuda.split(".")[0] + "." + toolkit_cuda.split(".")[1])
+            pytorch_major = float(
+                pytorch_cuda.split(".")[0] + "." + pytorch_cuda.split(".")[1]
+            )
+            toolkit_major = float(
+                toolkit_cuda.split(".")[0] + "." + toolkit_cuda.split(".")[1]
+            )
 
             if abs(pytorch_major - toolkit_major) > 0.1:
                 results.append(
@@ -408,7 +423,11 @@ def display_results(results: List[CheckResult]):
     Args:
         results: List of check results
     """
-    table = Table(title="Environment Setup Check Results", show_header=True, header_style="bold cyan")
+    table = Table(
+        title="Environment Setup Check Results",
+        show_header=True,
+        header_style="bold cyan",
+    )
     table.add_column("Component", style="cyan", width=20)
     table.add_column("Status", justify="center", width=15)
     table.add_column("Message", style="dim", width=45)
@@ -443,15 +462,27 @@ def display_results(results: List[CheckResult]):
     if fail_count > 0:
         summary_text.append(f", {fail_count} failed", style="red")
 
-    console.print(Panel(summary_text, title="[bold cyan]Check Summary[/bold cyan]", border_style="cyan"))
+    console.print(
+        Panel(
+            summary_text,
+            title="[bold cyan]Check Summary[/bold cyan]",
+            border_style="cyan",
+        )
+    )
 
 
 def main():
     """Main entry point for setup checker."""
     console.print("\n")
-    console.print("[bold cyan]╔════════════════════════════════════════════════╗[/bold cyan]")
-    console.print("[bold cyan]║   Environment Setup Checker                    ║[/bold cyan]")
-    console.print("[bold cyan]╚════════════════════════════════════════════════╝[/bold cyan]")
+    console.print(
+        "[bold cyan]╔════════════════════════════════════════════════╗[/bold cyan]"
+    )
+    console.print(
+        "[bold cyan]║   Environment Setup Checker                    ║[/bold cyan]"
+    )
+    console.print(
+        "[bold cyan]╚════════════════════════════════════════════════╝[/bold cyan]"
+    )
     console.print("")
 
     results = []
@@ -490,4 +521,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         console.print("\n[yellow]Check cancelled by user[/yellow]\n")
         sys.exit(0)
-

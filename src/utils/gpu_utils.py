@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 try:
     import pynvml
+
     PYNVML_AVAILABLE = True
 except ImportError:
     PYNVML_AVAILABLE = False
@@ -75,7 +76,11 @@ def get_gpu_info_nvidia_smi() -> Tuple[Optional[str], Optional[str], List[GPUInf
     try:
         # Get driver and CUDA version
         version_result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=driver_version,cuda_version", "--format=csv,noheader"],
+            [
+                "nvidia-smi",
+                "--query-gpu=driver_version,cuda_version",
+                "--format=csv,noheader",
+            ],
             capture_output=True,
             text=True,
             timeout=5,
@@ -173,14 +178,22 @@ def get_gpu_info_pynvml() -> Optional[List[GPUInfo]]:
                 handle = pynvml.nvmlDeviceGetHandleByIndex(i)
                 name_bytes = pynvml.nvmlDeviceGetName(handle)
                 # Handle both bytes and string (newer nvidia-ml-py returns strings)
-                name = name_bytes.decode("utf-8") if isinstance(name_bytes, bytes) else name_bytes
+                name = (
+                    name_bytes.decode("utf-8")
+                    if isinstance(name_bytes, bytes)
+                    else name_bytes
+                )
                 memory_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
                 total_memory = memory_info.total
 
                 # Get driver version
                 driver_version_bytes = pynvml.nvmlSystemGetDriverVersion()
                 # Handle both bytes and string (newer nvidia-ml-py returns strings)
-                driver_version = driver_version_bytes.decode("utf-8") if isinstance(driver_version_bytes, bytes) else driver_version_bytes
+                driver_version = (
+                    driver_version_bytes.decode("utf-8")
+                    if isinstance(driver_version_bytes, bytes)
+                    else driver_version_bytes
+                )
 
                 # CUDA version from driver (approximate)
                 cuda_version = None
@@ -257,7 +270,9 @@ def get_gpu_metrics(index: int = 0) -> Optional[Dict]:
 
         # Temperature
         try:
-            temperature = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+            temperature = pynvml.nvmlDeviceGetTemperature(
+                handle, pynvml.NVML_TEMPERATURE_GPU
+            )
         except:
             temperature = None
 
@@ -324,7 +339,9 @@ def get_gpu_metrics_nvidia_smi(index: int = 0) -> Optional[Dict]:
             temperature = float(parts[1])
             memory_used = int(parts[2]) * 1024 * 1024  # MB to bytes
             memory_total = int(parts[3]) * 1024 * 1024  # MB to bytes
-            memory_percent = (memory_used / memory_total) * 100 if memory_total > 0 else 0
+            memory_percent = (
+                (memory_used / memory_total) * 100 if memory_total > 0 else 0
+            )
             power = float(parts[4])
 
             return {
@@ -340,4 +357,3 @@ def get_gpu_metrics_nvidia_smi(index: int = 0) -> Optional[Dict]:
         logger.error(f"Error getting GPU metrics via nvidia-smi: {e}")
 
     return None
-

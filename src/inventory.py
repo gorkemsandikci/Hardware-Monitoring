@@ -141,7 +141,9 @@ def get_disk_info() -> List[Dict]:
                 logger.debug(f"Permission denied accessing {partition.mountpoint}")
                 continue
             except Exception as e:
-                logger.warning(f"Error getting disk info for {partition.mountpoint}: {e}")
+                logger.warning(
+                    f"Error getting disk info for {partition.mountpoint}: {e}"
+                )
                 continue
 
     except Exception as e:
@@ -404,4 +406,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

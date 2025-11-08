@@ -64,4 +64,3 @@ def format_frequency(hz: float) -> str:
     elif hz >= 1e3:
         return f"{hz / 1e3:.2f} kHz"
     return f"{hz:.2f} Hz"
-

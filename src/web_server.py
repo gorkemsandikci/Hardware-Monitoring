@@ -23,7 +23,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import psutil
 from src.utils.gpu_utils import get_gpu_info, get_gpu_metrics
 from src.utils.logger import setup_logger
-from src.utils.format_utils import format_bytes, format_percentage, format_temperature, format_frequency
+from src.utils.format_utils import (
+    format_bytes,
+    format_percentage,
+    format_temperature,
+    format_frequency,
+)
 from src.inventory import collect_inventory
 
 logger = setup_logger(__name__)
@@ -45,13 +50,17 @@ class ConnectionManager:
         """Accept and store WebSocket connection."""
         await websocket.accept()
         self.active_connections.append(websocket)
-        logger.info(f"Client connected. Total connections: {len(self.active_connections)}")
+        logger.info(
+            f"Client connected. Total connections: {len(self.active_connections)}"
+        )
 
     def disconnect(self, websocket: WebSocket):
         """Remove WebSocket connection."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-        logger.info(f"Client disconnected. Total connections: {len(self.active_connections)}")
+        logger.info(
+            f"Client disconnected. Total connections: {len(self.active_connections)}"
+        )
 
     async def broadcast(self, data: dict):
         """Broadcast data to all connected clients."""
@@ -76,7 +85,7 @@ def get_cpu_data() -> Dict:
     try:
         per_cpu = psutil.cpu_percent(percpu=True, interval=0.1)
         overall = psutil.cpu_percent(interval=0.1)
-        
+
         freq = None
         try:
             cpu_freq = psutil.cpu_freq()
@@ -101,7 +110,7 @@ def get_memory_data() -> Dict:
     try:
         memory = psutil.virtual_memory()
         swap = psutil.swap_memory()
-        
+
         return {
             "total": memory.total,
             "available": memory.available,
@@ -132,22 +141,24 @@ def get_disk_data() -> List[Dict]:
         for partition in partitions[:10]:  # Limit to 10 partitions
             try:
                 usage = psutil.disk_usage(partition.mountpoint)
-                disks.append({
-                    "device": partition.device,
-                    "mountpoint": partition.mountpoint,
-                    "fstype": partition.fstype,
-                    "total": usage.total,
-                    "used": usage.used,
-                    "free": usage.free,
-                    "percent": usage.percent,
-                })
+                disks.append(
+                    {
+                        "device": partition.device,
+                        "mountpoint": partition.mountpoint,
+                        "fstype": partition.fstype,
+                        "total": usage.total,
+                        "used": usage.used,
+                        "free": usage.free,
+                        "percent": usage.percent,
+                    }
+                )
             except PermissionError:
                 continue
             except Exception:
                 continue
     except Exception as e:
         logger.error(f"Error getting disk data: {e}")
-    
+
     return disks
 
 
@@ -158,7 +169,9 @@ def get_network_data() -> List[Dict]:
         net_io = psutil.net_io_counters(pernic=True)
         net_if_stats = psutil.net_if_stats()
 
-        for interface_name, stats in list(net_if_stats.items())[:10]:  # Limit to 10 interfaces
+        for interface_name, stats in list(net_if_stats.items())[
+            :10
+        ]:  # Limit to 10 interfaces
             if interface_name == "lo":
                 continue
 
@@ -166,13 +179,15 @@ def get_network_data() -> List[Dict]:
             sent = if_stats.bytes_sent if if_stats else 0
             recv = if_stats.bytes_recv if if_stats else 0
 
-            interfaces.append({
-                "name": interface_name,
-                "is_up": stats.isup,
-                "speed_mbps": stats.speed if stats.speed > 0 else None,
-                "bytes_sent": sent,
-                "bytes_recv": recv,
-            })
+            interfaces.append(
+                {
+                    "name": interface_name,
+                    "is_up": stats.isup,
+                    "speed_mbps": stats.speed if stats.speed > 0 else None,
+                    "bytes_sent": sent,
+                    "bytes_recv": recv,
+                }
+            )
     except Exception as e:
         logger.error(f"Error getting network data: {e}")
 
@@ -187,27 +202,31 @@ def get_gpu_data() -> List[Dict]:
         for gpu in gpu_list:
             metrics = get_gpu_metrics(gpu.index)
             if metrics:
-                gpus.append({
-                    "index": gpu.index,
-                    "name": gpu.name,
-                    "utilization": metrics.get("utilization", 0),
-                    "temperature": metrics.get("temperature"),
-                    "memory_used": metrics.get("memory_used", 0),
-                    "memory_total": metrics.get("memory_total", 0),
-                    "memory_percent": metrics.get("memory_percent", 0),
-                    "power": metrics.get("power"),
-                })
+                gpus.append(
+                    {
+                        "index": gpu.index,
+                        "name": gpu.name,
+                        "utilization": metrics.get("utilization", 0),
+                        "temperature": metrics.get("temperature"),
+                        "memory_used": metrics.get("memory_used", 0),
+                        "memory_total": metrics.get("memory_total", 0),
+                        "memory_percent": metrics.get("memory_percent", 0),
+                        "power": metrics.get("power"),
+                    }
+                )
             else:
-                gpus.append({
-                    "index": gpu.index,
-                    "name": gpu.name,
-                    "utilization": None,
-                    "temperature": None,
-                    "memory_used": None,
-                    "memory_total": gpu.total_memory,
-                    "memory_percent": None,
-                    "power": None,
-                })
+                gpus.append(
+                    {
+                        "index": gpu.index,
+                        "name": gpu.name,
+                        "utilization": None,
+                        "temperature": None,
+                        "memory_used": None,
+                        "memory_total": gpu.total_memory,
+                        "memory_percent": None,
+                        "power": None,
+                    }
+                )
     except Exception as e:
         logger.error(f"Error getting GPU data: {e}")
 
@@ -729,13 +748,13 @@ async def websocket_endpoint(websocket: WebSocket):
 def run_server(host: str = "0.0.0.0", port: int = 8000):
     """
     Run the web server.
-    
+
     Args:
         host: Host to bind to (default: 0.0.0.0 for all interfaces)
         port: Port to bind to (default: 8000)
     """
     import socket
-    
+
     # Get local IP address
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -744,7 +763,7 @@ def run_server(host: str = "0.0.0.0", port: int = 8000):
         s.close()
     except:
         local_ip = "localhost"
-    
+
     logger.info("=" * 60)
     logger.info("Hardware Monitor Web Server")
     logger.info("=" * 60)
@@ -754,14 +773,14 @@ def run_server(host: str = "0.0.0.0", port: int = 8000):
     logger.info("=" * 60)
     logger.info("Press CTRL+C to stop the server")
     logger.info("=" * 60)
-    
+
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 
 def main():
     """Main entry point for web server."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Hardware Monitor Web Server")
     parser.add_argument(
         "--host",
@@ -775,12 +794,11 @@ def main():
         default=8000,
         help="Port to bind to (default: 8000)",
     )
-    
+
     args = parser.parse_args()
-    
+
     run_server(host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
     main()
-

@@ -36,23 +36,23 @@ def show_menu():
     menu_text.append("  1. ", style="yellow")
     menu_text.append("Hardware Inventory", style="green")
     menu_text.append(" - Collect and display system hardware info\n", style="dim")
-    
+
     menu_text.append("  2. ", style="yellow")
     menu_text.append("Real-time Monitoring", style="green")
     menu_text.append(" - Live dashboard with system metrics\n", style="dim")
-    
+
     menu_text.append("  3. ", style="yellow")
     menu_text.append("Environment Checker", style="green")
     menu_text.append(" - Validate NVIDIA/CUDA/PyTorch setup\n", style="dim")
-    
+
     menu_text.append("  4. ", style="yellow")
     menu_text.append("Quick Driver Check", style="green")
     menu_text.append(" - Check NVIDIA driver status\n", style="dim")
-    
+
     menu_text.append("  5. ", style="yellow")
     menu_text.append("Web Server", style="green")
     menu_text.append(" - Start web server for remote monitoring\n", style="dim")
-    
+
     menu_text.append("\n  ", style="dim")
     menu_text.append("q", style="red")
     menu_text.append(" - Quit\n", style="dim")
@@ -81,7 +81,9 @@ def run_inventory():
 
 def run_monitor():
     """Run real-time monitoring dashboard."""
-    console.print("\n[bold green]Starting Real-time Monitoring Dashboard...[/bold green]")
+    console.print(
+        "\n[bold green]Starting Real-time Monitoring Dashboard...[/bold green]"
+    )
     console.print("[dim]Press 'q' in the monitor to quit[/dim]\n")
     try:
         script_path = Path(__file__).parent / "monitor.py"
@@ -119,8 +121,10 @@ def run_driver_check():
 def run_web_server():
     """Run web server for remote monitoring."""
     console.print("\n[bold green]Starting Web Server...[/bold green]")
-    console.print("[dim]The server will be accessible from any device on your network[/dim]\n")
-    
+    console.print(
+        "[dim]The server will be accessible from any device on your network[/dim]\n"
+    )
+
     try:
         script_path = Path(__file__).parent / "web_server.py"
         subprocess.run([sys.executable, str(script_path)], check=True)
@@ -140,7 +144,7 @@ def main():
 
     while True:
         show_menu()
-        
+
         choice = Prompt.ask(
             "\n[bold cyan]Enter your choice[/bold cyan]",
             choices=["1", "2", "3", "4", "5", "q", "Q"],
@@ -172,4 +176,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         console.print("\n\n[bold yellow]Goodbye![/bold yellow]\n")
         sys.exit(0)
-

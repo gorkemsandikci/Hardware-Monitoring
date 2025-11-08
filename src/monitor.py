@@ -31,7 +31,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.utils.gpu_utils import get_gpu_metrics, get_gpu_info
 from src.utils.logger import setup_logger
-from src.utils.format_utils import format_bytes, format_percentage, format_temperature, format_frequency
+from src.utils.format_utils import (
+    format_bytes,
+    format_percentage,
+    format_temperature,
+    format_frequency,
+)
 
 logger = setup_logger(__name__)
 console = Console()
@@ -194,7 +199,9 @@ class MonitorDashboard:
             net_io = psutil.net_io_counters(pernic=True)
             net_if_stats = psutil.net_if_stats()
 
-            for interface_name, stats in list(net_if_stats.items())[:5]:  # Limit to 5 interfaces
+            for interface_name, stats in list(net_if_stats.items())[
+                :5
+            ]:  # Limit to 5 interfaces
                 if interface_name == "lo":
                     continue
 
@@ -277,7 +284,9 @@ class MonitorDashboard:
             logger.error(f"Error getting GPU info: {e}")
             return None
 
-    def _get_status_color(self, value: float, warning_threshold: float, critical_threshold: float) -> str:
+    def _get_status_color(
+        self, value: float, warning_threshold: float, critical_threshold: float
+    ) -> str:
         """
         Get status color based on value and thresholds.
 
@@ -296,7 +305,9 @@ class MonitorDashboard:
         else:
             return "green"
 
-    def _get_status_symbol(self, value: float, warning_threshold: float, critical_threshold: float) -> str:
+    def _get_status_symbol(
+        self, value: float, warning_threshold: float, critical_threshold: float
+    ) -> str:
         """
         Get status symbol based on value and thresholds.
 
@@ -330,13 +341,19 @@ class MonitorDashboard:
         if gpu_table:
             gpu_panel = Panel(gpu_table, border_style="red")
         else:
-            gpu_panel = Panel(Text("No NVIDIA GPUs detected", style="dim"), border_style="red")
+            gpu_panel = Panel(
+                Text("No NVIDIA GPUs detected", style="dim"), border_style="red"
+            )
 
         # Create info panel
         uptime = time.time() - self.start_time
-        uptime_str = f"{int(uptime // 3600)}h {int((uptime % 3600) // 60)}m {int(uptime % 60)}s"
+        uptime_str = (
+            f"{int(uptime // 3600)}h {int((uptime % 3600) // 60)}m {int(uptime % 60)}s"
+        )
         info_text = Text()
-        info_text.append("Hardware Monitor - Press 'q' to quit, 'r' to reset stats\n", style="bold")
+        info_text.append(
+            "Hardware Monitor - Press 'q' to quit, 'r' to reset stats\n", style="bold"
+        )
         info_text.append(f"Uptime: {uptime_str}\n", style="dim")
         info_text.append(f"Update Interval: {self.update_interval}s", style="dim")
         info_panel = Panel(info_text, border_style="cyan", title="Info")
@@ -375,7 +392,11 @@ class MonitorDashboard:
         console.print("[dim]Press 'q' to quit, 'r' to reset stats[/dim]\n")
 
         try:
-            with Live(self.create_layout(), refresh_per_second=1.0 / self.update_interval, screen=True) as live:
+            with Live(
+                self.create_layout(),
+                refresh_per_second=1.0 / self.update_interval,
+                screen=True,
+            ) as live:
                 while self.running:
                     live.update(self.create_layout())
                     time.sleep(self.update_interval)
@@ -405,7 +426,9 @@ def main() -> None:
     """Main entry point for monitor script."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Real-time hardware monitoring dashboard")
+    parser = argparse.ArgumentParser(
+        description="Real-time hardware monitoring dashboard"
+    )
     parser.add_argument(
         "-i",
         "--interval",
@@ -422,4 +445,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
