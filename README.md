@@ -56,19 +56,22 @@ cd /home/gorkem/dev/personal/hardware-monitoring
 # Activate virtual environment
 source .venv/bin/activate
 
-# Run the interactive main menu (recommended)
+# Start web server (starts automatically)
 python3 src/main.py
 ```
 
-The main menu will let you select options with number keys:
-- **1** - Hardware Inventory
-- **2** - Real-time Monitoring Dashboard
-- **3** - Environment Setup Checker
-- **4** - Quick Driver Check
-- **5** - Web Server (Remote Monitoring)
-- **q** - Quit
+The web server will start and display:
+- **Local access**: `http://localhost:8000`
+- **Network access**: `http://YOUR_IP:8000` (shown when server starts)
 
-Or run individual scripts directly:
+**Web Interface Features:**
+- **📊 Real-time Monitoring**: Live hardware metrics with WebSocket updates
+- **💾 Hardware Inventory**: Complete system component information
+- **✅ Environment Checker**: Validate NVIDIA/CUDA/PyTorch setup
+
+Access from any device on your network - just open a web browser!
+
+**Or run individual scripts directly (optional):**
 
 ```bash
 # Collect hardware inventory

@@ -30,6 +30,14 @@ from src.utils.format_utils import (
     format_frequency,
 )
 from src.inventory import collect_inventory
+from src.setup_checker import (
+    check_nvidia_driver,
+    check_cuda_toolkit,
+    check_pytorch,
+    check_yolov8,
+    check_version_compatibility,
+    CheckResult,
+)
 
 logger = setup_logger(__name__)
 
@@ -296,6 +304,47 @@ async def get_dashboard():
             gap: 10px;
         }
         
+        .tabs {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-size: 1em;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .tab:hover {
+            background: #f5f5f5;
+            color: #667eea;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
         .status-indicator {
             width: 12px;
             height: 12px;
@@ -430,8 +479,35 @@ async def get_dashboard():
             </div>
         </div>
         
-        <div class="grid" id="metricsGrid">
-            <!-- Metrics will be populated by JavaScript -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('monitoring', this)">📊 Real-time Monitoring</button>
+            <button class="tab" onclick="switchTab('inventory', this)">💾 Hardware Inventory</button>
+            <button class="tab" onclick="switchTab('setup', this)">✅ Environment Checker</button>
+        </div>
+        
+        <div id="monitoring" class="tab-content active">
+            <div class="grid" id="metricsGrid">
+                <!-- Metrics will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div id="inventory" class="tab-content">
+            <div class="card">
+                <h2>Hardware Inventory</h2>
+                <div id="inventoryContent" style="padding: 20px;">
+                    <p>Loading inventory...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="setup" class="tab-content">
+            <div class="card">
+                <h2>Environment Setup Checker</h2>
+                <button onclick="runSetupCheck()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 20px 0;">Run Check</button>
+                <div id="setupContent" style="padding: 20px;">
+                    <p>Click "Run Check" to validate your environment setup.</p>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -697,6 +773,136 @@ async def get_dashboard():
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
         
+        function switchTab(tabName, element) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            if (element) {
+                element.classList.add('active');
+            }
+            
+            // Load data for inventory and setup tabs
+            if (tabName === 'inventory') {
+                loadInventory();
+            }
+        }
+        
+        async function loadInventory() {
+            try {
+                const response = await fetch('/api/inventory');
+                const data = await response.json();
+                displayInventory(data);
+            } catch (error) {
+                document.getElementById('inventoryContent').innerHTML = '<p style="color: red;">Error loading inventory: ' + error + '</p>';
+            }
+        }
+        
+        function displayInventory(inventory) {
+            const content = document.getElementById('inventoryContent');
+            let html = '<div style="display: grid; gap: 20px;">';
+            
+            // System Info
+            if (inventory.system) {
+                html += '<div><h3 style="color: #667eea; margin-bottom: 10px;">System</h3>';
+                html += `<p><strong>Hostname:</strong> ${inventory.system.hostname}</p>`;
+                html += `<p><strong>OS:</strong> ${inventory.system.os} ${inventory.system.os_release}</p>`;
+                html += '</div>';
+            }
+            
+            // CPU
+            if (inventory.cpu) {
+                html += '<div><h3 style="color: #667eea; margin-bottom: 10px;">CPU</h3>';
+                html += `<p><strong>Model:</strong> ${inventory.cpu.model}</p>`;
+                html += `<p><strong>Physical Cores:</strong> ${inventory.cpu.physical_cores}</p>`;
+                html += `<p><strong>Logical Threads:</strong> ${inventory.cpu.logical_threads}</p>`;
+                html += '</div>';
+            }
+            
+            // Memory
+            if (inventory.memory) {
+                html += '<div><h3 style="color: #667eea; margin-bottom: 10px;">Memory</h3>';
+                html += `<p><strong>Total:</strong> ${formatBytes(inventory.memory.total_bytes)}</p>`;
+                html += `<p><strong>Available:</strong> ${formatBytes(inventory.memory.available_bytes)}</p>`;
+                html += `<p><strong>Used:</strong> ${formatBytes(inventory.memory.used_bytes)} (${inventory.memory.usage_percent.toFixed(1)}%)</p>`;
+                html += '</div>';
+            }
+            
+            // GPU
+            if (inventory.gpu && inventory.gpu.gpus) {
+                html += '<div><h3 style="color: #667eea; margin-bottom: 10px;">GPU</h3>';
+                html += `<p><strong>Driver Version:</strong> ${inventory.gpu.driver_version || 'N/A'}</p>`;
+                html += `<p><strong>CUDA Version:</strong> ${inventory.gpu.cuda_version || 'N/A'}</p>`;
+                html += `<p><strong>GPU Count:</strong> ${inventory.gpu.gpu_count}</p>`;
+                inventory.gpu.gpus.forEach(gpu => {
+                    html += `<p><strong>GPU ${gpu.index}:</strong> ${gpu.name} (${formatBytes(gpu.total_memory_bytes)})</p>`;
+                });
+                html += '</div>';
+            }
+            
+            // Disks
+            if (inventory.disks && inventory.disks.length > 0) {
+                html += '<div><h3 style="color: #667eea; margin-bottom: 10px;">Disks</h3>';
+                inventory.disks.forEach(disk => {
+                    html += `<p><strong>${disk.device}</strong> (${disk.mountpoint}): ${formatBytes(disk.used_bytes)} / ${formatBytes(disk.total_bytes)} (${disk.usage_percent.toFixed(1)}%)</p>`;
+                });
+                html += '</div>';
+            }
+            
+            // Network
+            if (inventory.network && inventory.network.length > 0) {
+                html += '<div><h3 style="color: #667eea; margin-bottom: 10px;">Network Interfaces</h3>';
+                inventory.network.forEach(iface => {
+                    html += `<p><strong>${iface.name}:</strong> ${iface.is_up ? 'UP' : 'DOWN'}</p>`;
+                });
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            content.innerHTML = html;
+        }
+        
+        async function runSetupCheck() {
+            const content = document.getElementById('setupContent');
+            content.innerHTML = '<p>Running checks...</p>';
+            
+            try {
+                const response = await fetch('/api/setup-check');
+                const data = await response.json();
+                displaySetupCheck(data.results);
+            } catch (error) {
+                content.innerHTML = '<p style="color: red;">Error running setup check: ' + error + '</p>';
+            }
+        }
+        
+        function displaySetupCheck(results) {
+            const content = document.getElementById('setupContent');
+            let html = '<div style="display: grid; gap: 15px;">';
+            
+            results.forEach(result => {
+                const statusColor = result.status === 'pass' ? '#4caf50' : result.status === 'warning' ? '#ff9800' : '#f44336';
+                const statusIcon = result.status === 'pass' ? '✓' : result.status === 'warning' ? '⚠' : '✗';
+                
+                html += `<div style="padding: 15px; background: #f5f5f5; border-radius: 5px; border-left: 4px solid ${statusColor};">`;
+                html += `<h3 style="margin: 0 0 10px 0; color: ${statusColor};">${statusIcon} ${result.name}</h3>`;
+                html += `<p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: ${statusColor};">${result.status.toUpperCase()}</span></p>`;
+                html += `<p style="margin: 5px 0;"><strong>Message:</strong> ${result.message}</p>`;
+                if (result.recommendation) {
+                    html += `<p style="margin: 5px 0;"><strong>Recommendation:</strong> <span style="color: #666;">${result.recommendation}</span></p>`;
+                }
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            content.innerHTML = html;
+        }
+        
         // Connect on page load
         connect();
     </script>
@@ -714,6 +920,48 @@ async def get_inventory():
         return JSONResponse(content=inventory)
     except Exception as e:
         logger.error(f"Error getting inventory: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.get("/api/setup-check")
+async def get_setup_check():
+    """Get environment setup check results."""
+    try:
+        results = []
+
+        # Check NVIDIA driver
+        results.append(check_nvidia_driver())
+
+        # Check CUDA toolkit
+        results.append(check_cuda_toolkit())
+
+        # Check PyTorch
+        pytorch_check, pytorch_cuda_check = check_pytorch()
+        results.append(pytorch_check)
+        if pytorch_cuda_check:
+            results.append(pytorch_cuda_check)
+
+        # Check YOLOv8
+        results.append(check_yolov8())
+
+        # Check version compatibility
+        compatibility_results = check_version_compatibility()
+        results.extend(compatibility_results)
+
+        # Convert to dict for JSON
+        results_dict = [
+            {
+                "name": r.name,
+                "status": r.status,
+                "message": r.message,
+                "recommendation": r.recommendation or "",
+            }
+            for r in results
+        ]
+
+        return JSONResponse(content={"results": results_dict})
+    except Exception as e:
+        logger.error(f"Error getting setup check: {e}")
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 

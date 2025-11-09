@@ -15,6 +15,6 @@ else
     source .venv/bin/activate
 fi
 
-# Run main menu
+# Run web server directly
 python3 src/main.py
 
